@@ -1,0 +1,66 @@
+version: '2'
+services:
+  app:
+    image: rmts/app:7.2-ubuntu18
+    volumes:
+      - ./:/var/www/html:cached
+      - ~/.ssh:/root/.ssh:cached
+      - /tmp
+    ports:
+      - "20215:22"
+    environment:
+      - QUEUE_WORKER=
+      - "VIRTUAL_HOST=laravelug.lvh.me"
+    networks:
+      - laravelug-net
+      - nginx-proxy
+
+  database:
+    image: rmts/database:10.3
+    environment:
+      - "MYSQL_DATABASE=${DB_DATABASE}"
+    #    ports:
+    #      - "33062:3306"
+    networks:
+      - laravelug-net
+
+  database-testing:
+    image: rmts/database:10.3
+    environment:
+      - "MYSQL_DATABASE=testing"
+    networks:
+      - laravelug-net
+
+  redis:
+    image: redis:5-alpine
+    networks:
+      - laravelug-net
+
+  webpack:
+    image: rmts/webpack:9
+    volumes:
+      - ./:/home/app:cached
+      - /home/app/node_modules
+    networks:
+      - laravelug-net
+
+  elasticsearch:
+    image: elasticsearch:6.6.0
+    networks:
+      - laravelug-net
+
+  kibana:
+    image: kibana:6.6.0
+    environment:
+      - "VIRTUAL_HOST=kibana.laravelug.lvh.me"
+      - "VIRTUAL_PORT=5601"
+    networks:
+      - laravelug-net
+      - nginx-proxy
+
+networks:
+  laravelug-net:
+    driver: bridge
+  nginx-proxy:
+    external:
+      name: docker_default
